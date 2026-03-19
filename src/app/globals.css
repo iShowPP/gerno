@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Light Theme (default) ─────────────────────────── */
+:root {
+  --color-background: #FCFCFA;
+  --color-foreground: #2E2E2E;
+  --color-accent:     #EFEBE5;
+  --color-border:     #EBEBEB;
+  --color-paper:      #FFFFFF;
+  --color-muted:      #9A9490;
+}
+
+/* ─── Dark Theme (luxury warm mocha — premium pastel dark) ───── */
+[data-theme="dark"] {
+  --color-background: #2C2722;   /* deep mocha — warm, visibly lifted      */
+  --color-foreground: #F0EAE0;   /* warm parchment cream                   */
+  --color-accent:     #3D352C;   /* toasted caramel highlight              */
+  --color-border:     #453C33;   /* warm amber-tinted border               */
+  --color-paper:      #342D26;   /* card surface — a shade above bg        */
+  --color-muted:      #9E9088;   /* warm sand muted                        */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color:            var(--color-foreground);
+    @apply tracking-tight antialiased;
+    selection-color: var(--color-foreground);
+    *::selection {
+      background-color: var(--color-accent);
+      color:            var(--color-foreground);
+    }
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
