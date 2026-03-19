@@ -1,69 +1,165 @@
+'use client';
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ArrowLeft, Save, Send } from 'lucide-react';
+import { useAuth } from '@/lib/auth-client';
 
-export default function JournalEditorPage() {
+export default function JournalPage() {
+    const { id: circleId } = useParams<{ id: string }>();
+    const router = useRouter();
+    const { user, loading: authLoading } = useAuth(true);
+
+    const [title, setTitle] = useState('');
+    const [body, setBody] = useState('');
+    const [entryId, setEntryId] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState('');
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+
+    const wordCount = body.trim() ? body.trim().split(/\s+/).filter(Boolean).length : 0;
+
+    const saveDraft = useCallback(async (t: string, b: string) => {
+        if (!circleId) return;
+        setSaving(true);
+        try {
+            const res = await fetch('/api/entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ circle_id: circleId, title: t, body: b }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setEntryId(data.entry.id);
+                setLastSaved(new Date());
+                setError('');
+            } else {
+                setError(data.error || 'Could not save draft.');
+            }
+        } catch {
+            setError('Network error saving draft.');
+        } finally {
+            setSaving(false);
+        }
+    }, [circleId]);
+
+    // Auto-save every 3 seconds after typing stops
+    useEffect(() => {
+        if (!user || submitted) return;
+        if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(() => {
+            if (title || body) saveDraft(title, body);
+        }, 3000);
+        return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+    }, [title, body, user, submitted, saveDraft]);
+
+    const handleSubmit = async () => {
+        if (!entryId) {
+            await saveDraft(title, body);
+        }
+        if (!entryId && !body.trim()) {
+            setError('Write something before submitting.');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const idToSubmit = entryId;
+            const res = await fetch(`/api/entries/${idToSubmit}/submit`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                setSubmitted(true);
+                setTimeout(() => router.push(`/circle/${circleId}`), 1500);
+            } else {
+                setError(data.error || 'Could not submit entry.');
+            }
+        } catch {
+            setError('Network error submitting.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (authLoading) return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="font-serif text-2xl text-foreground/30 animate-pulse">Loading…</div>
+        </div>
+    );
+
+    if (submitted) return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center animate-fade-in-up">
+                <p className="font-serif text-4xl mb-4">Entry submitted. ✓</p>
+                <p className="text-foreground/50">Redirecting to your circle…</p>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-[#FFFDF9] text-foreground flex flex-col selection:bg-accent selection:text-foreground">
-            {/* Editor Header */}
-            <header className="px-6 py-6 md:px-12 flex justify-between items-center max-w-4xl mx-auto w-full border-b border-transparent hover:border-border/40 transition-colors z-50">
-                <div className="flex items-center gap-6">
-                    <Link href="/circle/1" className="inline-flex items-center text-sm font-medium text-foreground/40 hover:text-foreground transition-colors group">
-                        <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Close
+        <div className="min-h-screen bg-background text-foreground">
+            <div className="max-w-2xl mx-auto px-6 py-10">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-12">
+                    <Link href={`/circle/${circleId}`} className="inline-flex items-center text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group">
+                        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+                        Back to Circle
                     </Link>
-                    <span className="text-sm font-mono text-foreground/30 hidden sm:inline-block">Day 14 • Midnight Thoughts</span>
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs text-foreground/30">
+                            {saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Not saved yet'}
+                        </span>
+                        <button
+                            onClick={() => saveDraft(title, body)}
+                            disabled={saving}
+                            className="p-2 rounded-lg text-foreground/40 hover:text-foreground hover:bg-accent/40 transition-all"
+                            title="Save draft"
+                        >
+                            <Save className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <span className="text-[11px] font-medium text-foreground/30 uppercase tracking-widest hidden sm:inline-block">Draft Saved</span>
-                    <Link href="/circle/1" className="px-5 py-2.5 md:px-6 md:py-2.5 bg-foreground text-background rounded-full text-sm font-medium hover:bg-foreground/90 hover:shadow-lg hover:-translate-y-[1px] transition-all">
-                        Submit Entry
-                    </Link>
-                </div>
-            </header>
-
-            {/* Editor Body */}
-            <main className="flex-grow max-w-3xl mx-auto w-full px-6 md:px-12 flex flex-col mt-12 md:mt-24 pb-32 animate-fade-in-up">
-                <div className="mb-8">
+                {/* Editor */}
+                <div className="space-y-4">
                     <input
                         type="text"
-                        placeholder="A title for today (optional)"
-                        className="w-full text-4xl md:text-5xl font-serif font-medium bg-transparent border-none focus:outline-none focus:ring-0 placeholder:text-foreground/20 text-foreground/90 transition-colors"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Title (optional)"
+                        className="w-full font-serif text-3xl md:text-4xl bg-transparent border-none outline-none placeholder:text-foreground/20 text-foreground tracking-tight"
+                        disabled={submitted}
+                    />
+                    <div className="h-[1px] bg-border/40 w-full" />
+                    <textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="Begin writing your entry for today…"
+                        rows={16}
+                        className="w-full bg-transparent border-none outline-none resize-none font-light text-lg leading-relaxed placeholder:text-foreground/20 text-foreground"
+                        disabled={submitted}
                     />
                 </div>
 
-                <textarea
-                    className="w-full flex-grow resize-none bg-transparent border-none focus:outline-none focus:ring-0 text-xl md:text-2xl font-serif leading-[1.8] md:leading-[1.8] placeholder:text-foreground/20 text-foreground/80 placeholder:italic transition-colors"
-                    placeholder="Start writing..."
-                    spellCheck="false"
-                    autoFocus
-                />
+                {error && (
+                    <p className="mt-4 text-sm text-red-500/80 bg-red-50/50 border border-red-200/50 rounded-lg px-4 py-3">{error}</p>
+                )}
 
-                {/* Editor Footer / Tools */}
-                <div className="fixed bottom-0 left-0 right-0 p-6 md:p-8 flex justify-between items-end pointer-events-none">
-                    <div className="max-w-3xl mx-auto w-full flex justify-between items-center pointer-events-auto">
-                        {/* Word Count */}
-                        <div className="text-xs font-mono text-foreground/30">
-                            0 words
-                        </div>
-
-                        {/* Toolbar */}
-                        <div className="flex gap-2">
-                            <button className="w-10 h-10 rounded-full bg-paper border border-border/80 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/30 shadow-sm transition-all hover:-translate-y-0.5" title="Add Photo">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </button>
-                            <button className="w-10 h-10 rounded-full bg-paper border border-border/80 flex items-center justify-center text-foreground/50 hover:text-foreground hover:border-foreground/30 shadow-sm transition-all hover:-translate-y-0.5" title="Formatting">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h7" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+                {/* Footer */}
+                <div className="mt-8 pt-6 border-t border-border/40 flex items-center justify-between">
+                    <span className="text-sm text-foreground/30 font-mono">{wordCount} words</span>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={submitting || !body.trim()}
+                        className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-full font-medium hover:bg-foreground/90 transition-all shadow-md hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0"
+                    >
+                        <Send className="w-4 h-4" />
+                        {submitting ? 'Submitting…' : 'Submit Entry'}
+                    </button>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
