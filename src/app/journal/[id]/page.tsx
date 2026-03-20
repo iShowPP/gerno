@@ -100,16 +100,16 @@ export default function JournalPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <div className="max-w-2xl mx-auto px-6 py-10">
+            <div className="max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-10">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-12">
-                    <Link href={`/circle/${circleId}`} className="inline-flex items-center text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group">
-                        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                        Back to Circle
+                <div className="flex items-center justify-between mb-8 md:mb-12">
+                    <Link href={`/circle/${circleId}`} className="inline-flex items-center text-xs md:text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group lowercase">
+                        <ArrowLeft className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                        to circle
                     </Link>
                     <div className="flex items-center gap-3">
-                        <span className="text-xs text-foreground/30">
-                            {saving ? 'Saving…' : lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : 'Not saved yet'}
+                        <span className="text-[10px] md:text-xs text-foreground/30 font-mono">
+                            {saving ? 'saving…' : lastSaved ? `saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'unsaved'}
                         </span>
                         <button
                             onClick={() => saveDraft(title, body)}
@@ -123,22 +123,22 @@ export default function JournalPage() {
                 </div>
 
                 {/* Editor */}
-                <div className="space-y-4">
+                <div className="space-y-4 md:space-y-6">
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Title (optional)"
-                        className="w-full font-serif text-3xl md:text-4xl bg-transparent border-none outline-none placeholder:text-foreground/20 text-foreground tracking-tight"
+                        className="w-full font-serif text-2xl md:text-4xl bg-transparent border-none outline-none placeholder:text-foreground/15 text-foreground tracking-tight"
                         disabled={submitted}
                     />
-                    <div className="h-[1px] bg-border/40 w-full" />
+                    <div className="h-[1px] bg-border/30 w-full" />
                     <textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}
                         placeholder="Begin writing your entry for today…"
-                        rows={16}
-                        className="w-full bg-transparent border-none outline-none resize-none font-light text-lg leading-relaxed placeholder:text-foreground/20 text-foreground"
+                        className="w-full bg-transparent border-none outline-none resize-none font-light text-base md:text-lg leading-relaxed placeholder:text-foreground/15 text-foreground min-h-[50vh]"
+                        autoFocus
                         disabled={submitted}
                     />
                 </div>

@@ -43,18 +43,18 @@ export default function DashboardPage() {
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
             {/* Header */}
-            <header className="px-6 py-8 md:px-12 flex justify-between items-center max-w-5xl mx-auto border-b border-border/40">
-                <Link href="/" className="font-serif text-2xl tracking-tight text-foreground/90 select-none">
+            <header className="px-4 py-6 md:px-12 md:py-8 flex justify-between items-center max-w-5xl mx-auto border-b border-border/40">
+                <Link href="/" className="font-serif text-xl md:text-2xl tracking-tight text-foreground/90 select-none">
                     gerno<span className="text-foreground/30">.</span>
                 </Link>
-                <div className="flex items-center gap-4">
-                    <span className="text-sm text-foreground/50 hidden sm:block">{user?.name}</span>
-                    <div className="w-8 h-8 rounded-full bg-accent/80 border border-border flex items-center justify-center text-xs font-semibold text-foreground/70">
+                <div className="flex items-center gap-3 md:gap-4">
+                    <span className="text-xs text-foreground/50 hidden sm:block">{user?.name}</span>
+                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-accent/80 border border-border flex items-center justify-center text-[10px] md:text-xs font-semibold text-foreground/70">
                         {initials}
                     </div>
                     <button
                         onClick={logout}
-                        className="text-xs text-foreground/40 hover:text-foreground/70 transition-colors"
+                        className="text-[10px] md:text-xs text-foreground/40 hover:text-foreground/70 transition-colors uppercase tracking-wider"
                     >
                         Sign out
                     </button>
@@ -62,15 +62,15 @@ export default function DashboardPage() {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-5xl mx-auto px-6 md:px-12 mt-16">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <main className="max-w-5xl mx-auto px-4 md:px-12 mt-10 md:mt-16">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-12 gap-6">
                     <div>
-                        <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-3">Your Circles</h1>
-                        <p className="text-foreground/50 font-light text-lg">The stories you are weaving.</p>
+                        <h1 className="font-serif text-3xl md:text-5xl tracking-tight mb-2 md:mb-3">Your Circles</h1>
+                        <p className="text-foreground/50 font-light text-base md:text-lg">The stories you are weaving.</p>
                     </div>
                     <Link
                         href="/create"
-                        className="inline-flex items-center justify-center px-6 py-3 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-all font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                        className="inline-flex items-center justify-center px-6 py-3 bg-foreground text-background rounded-full hover:bg-foreground/90 transition-all font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 w-full sm:w-auto text-sm md:text-base"
                     >
                         + New Circle
                     </Link>

@@ -56,20 +56,20 @@ export default function CirclePage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
-            <div className="max-w-4xl mx-auto px-6 py-10">
-                <div className="mb-10">
-                    <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group">
-                        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                        Dashboard
+            <div className="max-w-4xl mx-auto px-4 py-8 md:px-6 md:py-10">
+                <div className="mb-8 md:mb-10">
+                    <Link href="/dashboard" className="inline-flex items-center text-xs md:text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group lowercase">
+                        <ArrowLeft className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                        back to dashboard
                     </Link>
                 </div>
 
                 {/* Circle Header */}
-                <div className="mb-12">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="mb-10 md:mb-12">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                         <div>
-                            <h1 className="font-serif text-4xl md:text-5xl tracking-tight mb-2">{circle.name}</h1>
-                            <p className="text-foreground/50 font-light">
+                            <h1 className="font-serif text-3xl md:text-5xl tracking-tight mb-2 leading-tight">{circle.name}</h1>
+                            <p className="text-foreground/50 font-light text-sm md:text-base">
                                 Day <span className="font-medium text-foreground">{Math.max(1, Math.min(dayNumber, circle.total_days))}</span> of {circle.total_days}
                             </p>
                         </div>
@@ -77,27 +77,27 @@ export default function CirclePage() {
                         {/* Invite */}
                         <button
                             onClick={copyInvite}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full border border-border/70 text-sm font-medium text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-all"
+                            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-border/70 text-xs md:text-sm font-medium text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-all w-full sm:w-auto"
                         >
                             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            {copied ? 'Copied!' : 'Copy Invite Link'}
+                            {copied ? 'Link Copied' : 'Copy Invite Link'}
                         </button>
                     </div>
                 </div>
 
                 {/* Today's Writer Banner */}
                 {todayWriter && (
-                    <div className={`rounded-2xl p-6 mb-10 border ${isMyTurn ? 'bg-foreground text-background border-foreground' : 'bg-paper border-border/80'}`}>
-                        <p className="text-sm font-medium opacity-60 mb-1 uppercase tracking-wider">Today&apos;s entry</p>
-                        <p className="text-xl font-serif">
-                            {isMyTurn ? "It's your turn to write today." : `${todayWriter.name} is writing today.`}
+                    <div className={`rounded-2xl p-6 md:p-8 mb-10 border ${isMyTurn ? 'bg-foreground text-background border-foreground shadow-lg' : 'bg-paper border-border/80'}`}>
+                        <p className="text-[10px] md:text-xs font-semibold opacity-60 mb-2 uppercase tracking-[0.2em]">The Ritual</p>
+                        <p className="text-lg md:text-2xl font-serif leading-snug">
+                            {isMyTurn ? "It's your turn to weave the story today." : `${todayWriter.name} is weaving the story today.`}
                         </p>
                         {isMyTurn && (
                             <Link
                                 href={`/journal/${circle.id}`}
-                                className="mt-4 inline-block px-6 py-2.5 bg-background text-foreground rounded-full text-sm font-medium hover:bg-background/90 transition-all"
+                                className="mt-6 inline-flex items-center px-6 py-3 bg-background text-foreground rounded-full text-sm font-medium hover:bg-background/90 transition-all shadow-sm"
                             >
-                                Open Journal Editor →
+                                Open Journal Editor
                             </Link>
                         )}
                     </div>

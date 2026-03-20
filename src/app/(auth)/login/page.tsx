@@ -41,15 +41,15 @@ export default function LoginPage() {
             <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-accent/30 to-transparent pointer-events-none" />
 
             <div className="w-full max-w-sm relative z-10 animate-fade-in-up">
-                <div className="mb-12">
-                    <Link href="/" className="inline-flex items-center text-sm font-medium text-foreground/50 hover:text-foreground transition-colors group">
-                        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                        Back
+                <div className="mb-10 md:mb-12">
+                    <Link href="/" className="inline-flex items-center text-xs font-medium text-foreground/50 hover:text-foreground transition-colors group lowercase">
+                        <ArrowLeft className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                        back
                     </Link>
                 </div>
 
-                <h1 className="font-serif text-4xl mb-3 tracking-tight">Welcome back.</h1>
-                <p className="text-foreground/60 mb-10 font-light text-[15px]">Return to your circle.</p>
+                <h1 className="font-serif text-3xl md:text-4xl mb-2 tracking-tight">welcome back.</h1>
+                <p className="text-foreground/60 mb-8 md:mb-10 font-light text-sm md:text-[15px]">Return to your circle.</p>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
                     <div className="space-y-1.5">
