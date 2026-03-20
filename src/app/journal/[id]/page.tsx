@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Send } from 'lucide-react';
+import { ArrowLeft, Save, Send, Camera, X, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-client';
 
 export default function JournalPage() {
@@ -13,24 +13,47 @@ export default function JournalPage() {
 
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
+    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [entryId, setEntryId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState('');
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const wordCount = body.trim() ? body.trim().split(/\s+/).filter(Boolean).length : 0;
 
-    const saveDraft = useCallback(async (t: string, b: string) => {
+    // Load today's draft
+    useEffect(() => {
+        if (!user || !circleId) return;
+        fetch(`/api/entries?circle_id=${circleId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.entry) {
+                    setTitle(data.entry.title || '');
+                    setBody(data.entry.body || '');
+                    setPhotoUrl(data.entry.photo_url || null);
+                    setEntryId(data.entry.id);
+                    if (data.entry.submitted_at || !data.entry.is_draft) {
+                        setSubmitted(true);
+                    }
+                }
+            })
+            .catch(err => console.error('Error loading draft:', err))
+            .finally(() => setLoading(false));
+    }, [circleId, user]);
+
+    const saveDraft = useCallback(async (t: string, b: string, p: string | null) => {
         if (!circleId) return;
         setSaving(true);
         try {
             const res = await fetch('/api/entries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ circle_id: circleId, title: t, body: b }),
+                body: JSON.stringify({ circle_id: circleId, title: t, body: b, photo_url: p }),
             });
             const data = await res.json();
             if (res.ok) {
@@ -49,20 +72,43 @@ export default function JournalPage() {
 
     // Auto-save every 3 seconds after typing stops
     useEffect(() => {
-        if (!user || submitted) return;
+        if (!user || submitted || loading) return;
         if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
         autoSaveTimer.current = setTimeout(() => {
-            if (title || body) saveDraft(title, body);
+            if (title || body || photoUrl) saveDraft(title, body, photoUrl);
         }, 3000);
         return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
-    }, [title, body, user, submitted, saveDraft]);
+    }, [title, body, photoUrl, user, submitted, loading, saveDraft]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image is too large. Max 5MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64 = reader.result as string;
+            setPhotoUrl(base64);
+            saveDraft(title, body, base64);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removePhoto = () => {
+        setPhotoUrl(null);
+        saveDraft(title, body, null);
+    };
 
     const handleSubmit = async () => {
         if (!entryId) {
-            await saveDraft(title, body);
+            await saveDraft(title, body, photoUrl);
         }
-        if (!entryId && !body.trim()) {
-            setError('Write something before submitting.');
+        if (!entryId && !body.trim() && !photoUrl) {
+            setError('Write something or add a photo before submitting.');
             return;
         }
         setSubmitting(true);
@@ -83,7 +129,7 @@ export default function JournalPage() {
         }
     };
 
-    if (authLoading) return (
+    if (authLoading || loading) return (
         <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="font-serif text-2xl text-foreground/30 animate-pulse">Loading…</div>
         </div>
@@ -112,7 +158,7 @@ export default function JournalPage() {
                             {saving ? 'saving…' : lastSaved ? `saved ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'unsaved'}
                         </span>
                         <button
-                            onClick={() => saveDraft(title, body)}
+                            onClick={() => saveDraft(title, body, photoUrl)}
                             disabled={saving}
                             className="p-2 rounded-lg text-foreground/40 hover:text-foreground hover:bg-accent/40 transition-all"
                             title="Save draft"
@@ -124,15 +170,56 @@ export default function JournalPage() {
 
                 {/* Editor */}
                 <div className="space-y-4 md:space-y-6">
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Title (optional)"
-                        className="w-full font-serif text-2xl md:text-4xl bg-transparent border-none outline-none placeholder:text-foreground/15 text-foreground tracking-tight"
-                        disabled={submitted}
-                    />
+                    <div className="flex items-center gap-4">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Title (optional)"
+                            className="flex-1 font-serif text-2xl md:text-4xl bg-transparent border-none outline-none placeholder:text-foreground/15 text-foreground tracking-tight"
+                            disabled={submitted}
+                        />
+                        {!submitted && (
+                            <>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="p-2 rounded-full hover:bg-accent/40 text-foreground/40 hover:text-foreground transition-all"
+                                    title="Add photo"
+                                >
+                                    <Camera className="w-5 h-5 md:w-6 md:h-6" />
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+                            </>
+                        )}
+                    </div>
+
                     <div className="h-[1px] bg-border/30 w-full" />
+
+                    {/* Image Preview */}
+                    {photoUrl && (
+                        <div className="relative group rounded-2xl overflow-hidden bg-accent/10 border border-border/40">
+                            <img
+                                src={photoUrl}
+                                alt="Entry"
+                                className="w-full h-auto max-h-[400px] object-cover"
+                            />
+                            {!submitted && (
+                                <button
+                                    onClick={removePhoto}
+                                    className="absolute top-4 right-4 p-2 bg-background/80 hover:bg-background text-foreground rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     <textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}

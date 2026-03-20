@@ -27,6 +27,32 @@ async function verifyTodayWriter(circleId: string, userId: string) {
     return { circle, dayNumber };
 }
 
+// ── GET /api/entries — fetch today's draft/entry ──────────
+export async function GET(req: NextRequest) {
+    const user = await verifyToken(req);
+    if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+
+    const { searchParams } = new URL(req.url);
+    const circleId = searchParams.get('circle_id');
+    if (!circleId) return NextResponse.json({ error: 'circle_id is required.' }, { status: 400 });
+
+    try {
+        const check = await verifyTodayWriter(circleId, user.id);
+        if ('error' in check) return NextResponse.json({ error: check.error }, { status: check.status });
+        const { dayNumber } = check as { dayNumber: number };
+
+        const entries = await query<Record<string, unknown>>(
+            'SELECT * FROM entries WHERE circle_id = $1 AND day_number = $2 AND user_id = $3',
+            [circleId, dayNumber, user.id]
+        );
+
+        return NextResponse.json({ entry: entries[0] || null, dayNumber });
+    } catch (err) {
+        console.error('[entries GET today]', err);
+        return NextResponse.json({ error: 'Server error fetching draft.' }, { status: 500 });
+    }
+}
+
 // ── POST /api/entries — save/upsert draft ────────────────
 export async function POST(req: NextRequest) {
     const user = await verifyToken(req);
